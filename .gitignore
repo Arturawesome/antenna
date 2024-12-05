@@ -1,3 +1,7 @@
 # Prerequisites
 # Executables
 *.out
+build/
+CMakeCache.txt
+*.o
+*.exe
