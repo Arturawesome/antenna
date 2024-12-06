@@ -6,8 +6,12 @@
 #include <iostream>
 
 class Plane {
+private:
+    double norm_vector[3];
 public:
-    Plane();
+    Plane(double nx, double ny, double nz);
+
+    double* getNormalVector();
     void print();
 };
 
