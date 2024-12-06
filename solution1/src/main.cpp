@@ -10,4 +10,5 @@ int main(){
     plane.print();
     signalProcessor.process();
     signalProcessor.calcProjectionSignal();
+    signalProcessor.reconstructionOfSignal();
 }

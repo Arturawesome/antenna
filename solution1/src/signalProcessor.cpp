@@ -37,6 +37,24 @@ void SignalProcessor:: readSignal(const std::string& full_name){
     pojectionSignals.reserve(falling_signals_dat.size() * 3);
 }
 
+void SignalProcessor:: reconstructionOfSignal(){
+    double* normVector = antenna.getNormalVector();
+    double modulNormVector = sqrt(pow(normVector[0], 2) + pow(normVector[1], 2)+ pow(normVector[2], 2));
+    double unitnormVector[3] = { normVector[0] / modulNormVector, normVector[1] / modulNormVector, normVector[2] / modulNormVector };
+
+    for(std::vector<double>& pr_signal: pojectionSignals){
+        double dotProduct = pr_signal[0] * unitnormVector[0] + pr_signal[1] * unitnormVector[1] + pr_signal[2] * unitnormVector[2];
+        double rec_i, rec_j, rec_k;
+        std::cout<<" 2Dot = "<<dotProduct<<"\n";
+        rec_i = pr_signal[0] - 2 * dotProduct * unitnormVector[0];
+        rec_j = pr_signal[1] - 2 * dotProduct * unitnormVector[1];
+        rec_k = pr_signal[2] - 2 * dotProduct * unitnormVector[2];
+        reconSignals.push_back({rec_i, rec_j, rec_k});
+        std::cout<<"reconstructionOfSignal: "<<rec_i<<" "<<rec_j<<" "<<rec_k<<"\n";
+    }
+
+
+}
 
 void SignalProcessor:: calcProjectionSignal(){
 
