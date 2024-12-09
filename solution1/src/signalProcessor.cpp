@@ -5,14 +5,20 @@
 #include <stdexcept>
 #include <string>
 #include <cmath>
-SignalProcessor::SignalProcessor(const Plane& antennaPlane):
-                                antenna(antennaPlane)
+#include <eigen3/Eigen/Dense>
+SignalProcessor::SignalProcessor(const Plane& antennaPlane, const Plane& antennaPlane2):
+                                antenna(antennaPlane), antenna2(antennaPlane2)
 {
-    std::cout << "SignalProcessor constructor called." << std::endl;
+    ellipseCenter.setZero();
+    direction.setZero();
 }
 
-void SignalProcessor::process() {
-    std::cout << "SignalProcessor process function called." << std::endl;
+void SignalProcessor::findDirection() {
+    findCenterEllips();
+    findNormalToSignal();
+    direction = (ellipseCenter + normal);///.normalized();
+    std::cout<<"direction:\n";
+    std::cout<<"x = "<<direction.x()<<"; y = "<<direction.y()<<"; z = "<<direction.z()<<"\n";
 }
 
 
@@ -30,51 +36,82 @@ void SignalProcessor:: readSignal(const std::string& full_name){
         ss >> i;
         ss >> j;
         ss >> k;
-        std::cout<<"i = "<<i<<"; j = "<<j<<"; k = "<<k<<"\n";
         falling_signals_dat.push_back({i, j, k});
+        falling_signals_dat_xyz.push_back({i, j, k});
     }
+
     f.close();
     pojectionSignals.reserve(falling_signals_dat.size() * 3);
 }
 
-void SignalProcessor:: reconstructionOfSignal(){
-    double* normVector = antenna.getNormalVector();
-    double modulNormVector = sqrt(pow(normVector[0], 2) + pow(normVector[1], 2)+ pow(normVector[2], 2));
-    double unitnormVector[3] = { normVector[0] / modulNormVector, normVector[1] / modulNormVector, normVector[2] / modulNormVector };
 
-    for(std::vector<double>& pr_signal: pojectionSignals){
-        double dotProduct = pr_signal[0] * unitnormVector[0] + pr_signal[1] * unitnormVector[1] + pr_signal[2] * unitnormVector[2];
-        double rec_i, rec_j, rec_k;
-        std::cout<<" 2Dot = "<<dotProduct<<"\n";
-        rec_i = pr_signal[0] - 2 * dotProduct * unitnormVector[0];
-        rec_j = pr_signal[1] - 2 * dotProduct * unitnormVector[1];
-        rec_k = pr_signal[2] - 2 * dotProduct * unitnormVector[2];
-        reconSignals.push_back({rec_i, rec_j, rec_k});
-        std::cout<<"reconstructionOfSignal: "<<rec_i<<" "<<rec_j<<" "<<rec_k<<"\n";
+void SignalProcessor:: findCenterEllips() {
+    for(Eigen::Vector3d e: falling_signals_dat_xyz){
+        ellipseCenter += e;
     }
-
+    ellipseCenter /=falling_signals_dat_xyz.size();
+    std::cout<<"findCenterEllips: ";
+    std::cout<<ellipseCenter.x()<<"; "<<ellipseCenter.y()<<"; "<<ellipseCenter.z()<<"\n";
 
 }
 
+
+void SignalProcessor:: findNormalToSignal(){
+    Eigen::MatrixXd A(falling_signals_dat_xyz.size(), 3);
+    for(int i = 0; i < falling_signals_dat_xyz.size(); ++i){
+        A.row(i) = falling_signals_dat_xyz[i].transpose();
+    }
+
+    Eigen:: JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    normal = svd.matrixV().col(2);//.normalized();
+    std::cout<<"findNormalToSignal: ";
+    std::cout<<normal.x()<<"; "<<normal.y()<<"; "<<normal.z()<<"\n";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void SignalProcessor:: calcProjectionSignal(){
-
     double* normVector = antenna.getNormalVector();
+    double* normVector2 = antenna2.getNormalVector();
     double modulNormVector = sqrt(pow(normVector[0], 2) + pow(normVector[1], 2)+ pow(normVector[2], 2));
-
-
+    double modulNormVector2 = sqrt(pow(normVector2[0], 2) + pow(normVector2[1], 2)+ pow(normVector2[2], 2));
 
     for(std::vector<double>& signal: falling_signals_dat){
         double dotProduct = signal[0] * normVector[0] + signal[1] * normVector[1] + signal[2] * normVector[2];
+        double dotProduct2 = signal[0] * normVector2[0] + signal[1] * normVector2[1] + signal[2] * normVector2[2];
         double in, jn, kn;
         in =signal[0] - dotProduct * normVector[0] /modulNormVector/modulNormVector;
         jn =signal[1] - dotProduct * normVector[1] /modulNormVector/modulNormVector;
         kn =signal[2] - dotProduct * normVector[2] /modulNormVector/modulNormVector;
         pojectionSignals.push_back({in, jn, kn});
-        std::cout<<"calcProjectionSignal: "<<in<<" "<<jn<<" "<<kn<<"\n";
+        std::cout<<"calcProjectionSignal1: "<<in<<" "<<jn<<" "<<kn<<"\n";
 
+        in =signal[0] - dotProduct2 * normVector2[0] /modulNormVector2/modulNormVector2;
+        jn =signal[1] - dotProduct2 * normVector2[1] /modulNormVector2/modulNormVector2;
+        kn =signal[2] - dotProduct2 * normVector2[2] /modulNormVector2/modulNormVector2;
+        pojectionSignals2.push_back({in, jn, kn});
+        std::cout<<"calcProjectionSignal2: "<<in<<" "<<jn<<" "<<kn<<"\n";
     }
-
-
 }
 
 

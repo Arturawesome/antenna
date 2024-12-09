@@ -3,12 +3,20 @@
 
 int main(){
     Plane plane(1, 1, 1);
-    SignalProcessor signalProcessor(plane);
+    Plane plane2(1, 1, 1.1);
+    SignalProcessor signalProcessor(plane, plane2);
 
-    signalProcessor.readSignal("/home/softmatter/Documents/Conferences/antena/proba.txt");
+    signalProcessor.readSignal("/home/artur/Documents/antenna/solution1/signals.txt");
 
     plane.print();
-    signalProcessor.process();
-    signalProcessor.calcProjectionSignal();
-    signalProcessor.reconstructionOfSignal();
+
+
+    signalProcessor.findDirection();
+    //signalProcessor.findNormalToSignal();
+    //signalProcessor.calcProjectionSignal();
+    // signalProcessor.findDirection();
+   // signalProcessor.reconstructionOfSignal();
+    //signalProcessor.findNormalToSignal();
+
+
 }
